@@ -51,13 +51,7 @@ def main():
             del interface_dict['special_prototype']
             collect(source_info, interface_dict)
 
-        client_filename = os.path.splitext(original_filename)[0] + '-rpc.hpp'
-        print 'creating file', client_filename
-        f = open(client_filename, 'w')
-        f.write(templates.client_header % (source_info))
-        f.close()
-
-        client_filename = os.path.splitext(original_filename)[0] + '-rpc.cpp'
+        client_filename = os.path.splitext(original_filename)[0] + '-rpc-client.cpp'
         print 'creating file', client_filename
         f = open(client_filename, 'w')
         f.write(templates.client_source % (source_info))

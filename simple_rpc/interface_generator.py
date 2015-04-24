@@ -25,6 +25,11 @@ def isstring (typespec):
 def isscalar(typespec):
     return not (iscontainer(typespec) or isstring(typespec))
 
+def ispointer(typespec):
+    if typespec.find('*')!=-1:
+        return True
+    return False
+
 def isresult(typespec):
     if typespec.startswith('const '):
         return False
@@ -45,6 +50,8 @@ def str2magic(s, _cache={}):
 
 def get_variable_typespec (typespec):
     if typespec.endswith('&'):
+        variable_typespec = typespec[:-1].rstrip()
+    elif typespec.endswith('*'):
         variable_typespec = typespec[:-1].rstrip()            
     else:
         variable_typespec = typespec
@@ -53,6 +60,7 @@ def get_variable_typespec (typespec):
     return variable_typespec
 
 def get_socket_io_methods(typespec):
+    if ispointer (typespec): return 'read_pointer', 'buffers_add_pointer'
     if isscalar (typespec): return 'read_scalar', 'buffers_add_scalar'
     if isstring (typespec): return 'read_string', 'buffers_add_string'
     if isvector(typespec) and isscalar(vector_item_typespec(typespec)): 
@@ -76,14 +84,23 @@ def make_interface_source(server_name, namespace, (function_name, return_type, a
         if name=='' and typespec=='void':
             continue
         typespec_names.append('%s %s' % (typespec, name))
-        variables.append(name)
-        variable_typespec = get_variable_typespec (typespec)
 
-        variable_declarations.append('%s %s;' % (variable_typespec, name))
+        variables.append('%s' % (name))
+        variable_typespec = get_variable_typespec (typespec)
+        
+        if(ispointer(typespec)):
+            variable_declarations.append('%s buffer_%s;' % (variable_typespec, name))
+            variable_declarations.append('%s %s = &buffer_%s;' % (typespec, name, name))            
+        else:
+            variable_declarations.append('%s %s;' % (variable_typespec, name))
         read_mth, write_mth = get_socket_io_methods(typespec)
         buffers_add_arguments.extend((getattr (templates, write_mth) % (locals ())).split ('\n'))
         recieve_arguments.append('%(srpc)ssocket.%(read_mth)s(%(name)s, "%(name)s")' % (locals()))
         if isresult(typespec):
+            recieve_results.append('%(srpc)ssocket.%(read_mth)s(%(name)s, "%(name)s")' % (locals()))
+            buffers_add_results.extend((getattr(templates, write_mth) % (locals ())).split ('\n'))
+
+        if ispointer(typespec):
             recieve_results.append('%(srpc)ssocket.%(read_mth)s(%(name)s, "%(name)s")' % (locals()))
             buffers_add_results.extend((getattr(templates, write_mth) % (locals ())).split ('\n'))
 
@@ -115,7 +132,10 @@ def make_interface_source(server_name, namespace, (function_name, return_type, a
     if not recieve_results: recieve_results = 'true'
     if not recieve_arguments: recieve_arguments = 'true'
 
-    function_prototype = '%(return_type)s %(namespace)s::%(function_name)s(%(typespec_names)s)' % locals()
+    if namespace=='simple_rpc':
+        function_prototype = '%(return_type)s simple_rpc::%(function_name)s(%(typespec_names)s)' % locals()
+    else:
+        function_prototype = '%(return_type)s %(function_name)s(%(typespec_names)s)' % locals()
     special_prototype = '  %(return_type)s %(function_name)s(%(typespec_names)s);' % locals()
 
     server_magic   = uniquestr(str2magic(server_name))

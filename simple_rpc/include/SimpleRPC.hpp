@@ -19,12 +19,7 @@
 #endif
 
 #define SIMPLE_RPC_CONNECT(HOST, PORT, DEBUG_LEVEL) \
-  simple_rpc::SimpleRPC rpc(HOST, PORT, DEBUG_LEVEL); \
-  if (!rpc) \
-    { \
-      std::cout << "Failure in creating connection to RPC server. Quiting," << std::endl; \
-      exit(1); \
-    }
+  simple_rpc::SimpleRPC rpc(HOST, PORT, DEBUG_LEVEL);
 
 namespace simple_rpc
 {

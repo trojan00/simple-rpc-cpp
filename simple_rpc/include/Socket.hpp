@@ -107,6 +107,12 @@ public:
       std::cout<<m_appname<<":read_scalar<"<<typeid(T).name()<<">("<<name<<") <- "<<len<<" bytes"<<std::endl;
     return true;
   }
+
+  template <typename T> bool read_pointer(T &value, const std::string & name = "", int delta_debug = 0)
+  {
+    return read_scalar(*value, name, delta_debug);
+  }
+
   /*
   template <typename T> bool write_serial(const T &value, const std::string & name = "")
   {

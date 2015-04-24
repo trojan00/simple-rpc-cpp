@@ -1,0 +1,7 @@
+*.d
+*.o
+client
+server
+standalon
+api-rpc-*
+
